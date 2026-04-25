@@ -674,6 +674,7 @@ const loadGraphData = async (centerId?: string) => {
 }
 
 const selectNode = (node: GraphNode) => {
+  console.log('[selectNode] Selecting node:', node.id, node.type)
   selectedNode.value = node
 
   if (node.type === 'user') {
@@ -693,6 +694,7 @@ const selectNode = (node: GraphNode) => {
 }
 
 const handleNodeDoubleClick = async (node: GraphNode) => {
+  console.log('[handleNodeDoubleClick] node:', node.id, node.type)
   if (node.type === 'user') {
     // Double-click user shows profile modal
     showUserProfile.value = true
@@ -712,6 +714,7 @@ const handleNodeDoubleClick = async (node: GraphNode) => {
     selectedNode.value = null
   } else if (node.type === 'star') {
     // Double-click star opens editor
+    console.log('[handleNodeDoubleClick] Opening star:', node.id)
     selectNode(node)
     showEditor.value = true
     loadNodeTags(node.id)
@@ -914,6 +917,7 @@ const createNode = async (type: 'star' | 'galaxy') => {
 }
 
 const loadStarContent = async (starId: string) => {
+  console.log('[loadStarContent] Loading content for star:', starId)
   try {
     const response = await nodeApi.getStarContent(starId)
     // API returns {code, message, data} where data is the actual content string
@@ -926,22 +930,29 @@ const loadStarContent = async (starId: string) => {
     }
 
     // Also load tags for this star
+    console.log('[loadStarContent] Calling loadNodeTags for:', starId)
     await loadNodeTags(starId)
   } catch (error) {
-    console.error('Failed to load star content:', error)
+    console.error('[loadStarContent] Failed to load star content:', error)
     editorContent.value = '# 新笔记\n\n开始编写内容...'
   }
 }
 
 // Load tags for a node
 async function loadNodeTags(nodeId: string) {
+  console.log('[loadNodeTags] Loading tags for node:', nodeId)
   try {
     const response = await nodeApi.getNodeTags(nodeId)
+    console.log('[loadNodeTags] Response:', response)
     if (response.data) {
       nodeTags.value = response.data
+      console.log('[loadNodeTags] Tags loaded:', nodeTags.value)
+    } else {
+      console.log('[loadNodeTags] No data in response')
+      nodeTags.value = []
     }
   } catch (error) {
-    console.error('Failed to load node tags:', error)
+    console.error('[loadNodeTags] Failed to load node tags:', error)
     nodeTags.value = []
   }
 }

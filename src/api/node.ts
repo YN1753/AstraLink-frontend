@@ -216,7 +216,9 @@ class NodeApi {
 
   // Get tags for a specific node
   async getNodeTags(nodeId: string): Promise<ApiResponse<Tag[]>> {
+    console.log('[nodeApi.getNodeTags] Fetching tags for nodeId:', nodeId)
     const response = await api.get<ApiResponse<Tag[]>>(`/api/nodes/${nodeId}/tags`)
+    console.log('[nodeApi.getNodeTags] Response:', response.data)
     return response.data
   }
 

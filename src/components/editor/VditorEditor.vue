@@ -1,6 +1,6 @@
 <template>
   <div class="vditor-wrapper" :class="{ 'is-loading': isLoading }">
-    <div class="vditor-tags-bar" v-if="tags && tags.length > 0 || showAddTag">
+    <div class="vditor-tags-bar" v-if="shouldShowTagsBar">
       <div class="vditor-tags">
         <span
           v-for="tag in displayTags"
@@ -59,7 +59,14 @@ const isFullscreen = ref(false)
 
 // Computed tags display (max 5)
 const displayTags = computed(() => {
+  console.log('[VditorEditor] displayTags computed, tags prop:', props.tags, 'length:', props.tags?.length || 0)
   return (props.tags || []).slice(0, 5)
+})
+
+const shouldShowTagsBar = computed(() => {
+  const show = !!(props.tags && props.tags.length > 0 || props.showAddTag)
+  console.log('[VditorEditor] shouldShowTagsBar:', show, 'tags:', props.tags, 'showAddTag:', props.showAddTag)
+  return show
 })
 
 const hiddenCount = computed(() => {
