@@ -656,9 +656,11 @@ const loadGraphData = async (centerId?: string) => {
       // Force render after data is loaded
       await nextTick()
       if (forceGraphRef.value) {
-        setTimeout(() => {
-          forceGraphRef.value?.zoomToNode(centerNodeId.value)
-        }, 500)
+        // Clear existing zoom transform so centering works fresh
+        if (forceGraphRef.value.clearZoomTransform) {
+          forceGraphRef.value.clearZoomTransform()
+        }
+        forceGraphRef.value?.centerOnNode(centerNodeId.value)
       }
     }
   } catch (error: any) {

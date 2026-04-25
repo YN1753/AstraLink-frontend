@@ -53,6 +53,7 @@ let nodeSelection: any
 let isDragging = false
 let dragStartPos = { x: 0, y: 0 }
 const DRAG_THRESHOLD = 5 // pixels to move before considered a drag
+let currentZoomTransform: any = null
 
 // ==========================================
 // Canvas 星空背景动画
@@ -108,8 +109,9 @@ const getNodeTheme = (type: string) => {
 const initSimulation = () => {
   if (!svgRef.value || !containerRef.value) return
 
-  const width = window.innerWidth
-  const height = window.innerHeight
+  // Use props width/height to match the actual viewport (accounting for header)
+  const width = props.width || window.innerWidth
+  const height = props.height || window.innerHeight
 
   localNodes = props.nodes.map(n => ({ ...toRaw(n), data: { ...toRaw(n.data) } }))
   localLinks = props.links.map(l => ({ ...toRaw(l) }))
@@ -126,23 +128,28 @@ const initSimulation = () => {
     if (centerNode && d.id === centerNode.id) {
       d.x = centerX
       d.y = centerY
+      // Don't pin center node - let it be influenced by forces like other nodes
+      d.fx = null
+      d.fy = null
     } else {
       const angle = (2 * Math.PI * i) / localNodes.length
-      const radius = Math.min(width, height) / 3
+      // Use larger radius for better spread
+      const radius = Math.min(width, height) / 2.5
       d.x = centerX + radius * Math.cos(angle)
       d.y = centerY + radius * Math.sin(angle)
+      d.vx = 0
+      d.vy = 0
+      d.fx = null
+      d.fy = null
     }
-    d.vx = 0
-    d.vy = 0
-    d.fx = null
-    d.fy = null
   })
 
   simulation = d3.forceSimulation(localNodes)
-    .force('link', d3.forceLink(localLinks).id((d: any) => d.id).distance(150))
+    .force('link', d3.forceLink(localLinks).id((d: any) => d.id).distance(100).strength(0.8))
     .force('charge', d3.forceManyBody().strength(-800))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collide', d3.forceCollide().radius(60))
+    .force('collide', d3.forceCollide().radius(50))
+    .alphaDecay(0.02)
     .on('tick', ticked)
 }
 
@@ -152,18 +159,23 @@ const render = () => {
   const svg = d3.select(svgRef.value)
     svg.selectAll('*').remove()
 
-  // 设置 SVG viewBox 用于正确的坐标系统
-  const width = window.innerWidth
-  const height = window.innerHeight
+  // Use props width/height to set viewBox (accounts for header height)
+  const width = props.width || window.innerWidth
+  const height = props.height || window.innerHeight
   svg.attr('viewBox', `0 0 ${width} ${height}`)
 
   zoomBehavior = d3.zoom()
     .scaleExtent([0.15, 5])
     .on('zoom', (event: any) => {
+      currentZoomTransform = event.transform
       svg.select('.links-group').attr('transform', event.transform)
       svg.select('.nodes-group').attr('transform', event.transform)
     })
   svg.call(zoomBehavior)
+  // Restore previous zoom state if any
+  if (currentZoomTransform) {
+    svg.call(zoomBehavior.transform, currentZoomTransform)
+  }
 
   svg.append('g').attr('class', 'links-group')
   svg.append('g').attr('class', 'nodes-group')
@@ -294,29 +306,12 @@ const render = () => {
 
   // 注意：click/dblclick/contextmenu 事件现在直接在 foreignObject 内部的 DOM 元素上处理
   // 这是因为 foreignObject 内的 HTML 内容需要原生事件监听器
-
-  // 居中
-  setTimeout(() => {
-    if (props.centerNodeId && zoomBehavior) {
-      const centerNode = localNodes.find((n: any) => n.id === props.centerNodeId) || localNodes[0]
-      if (centerNode) {
-        const w = window.innerWidth
-        const h = window.innerHeight
-        const tx = w / 2 - centerNode.x
-        const ty = h / 2 - centerNode.y
-        d3.select(svgRef.value).transition().duration(800).call(
-          zoomBehavior.transform,
-          d3.zoomIdentity.translate(tx, ty).scale(1.3)
-        )
-      }
-    }
-  }, 200)
 }
 
 function dragStarted(event: any, d: any) {
   isDragging = true
   dragStartPos = { x: event.x, y: event.y }
-  if (!event.active) simulation.alphaTarget(0.3).restart()
+  if (!event.active) simulation.alphaTarget(0.5).restart()
   d.fx = d.x
   d.fy = d.y
 }
@@ -324,6 +319,10 @@ function dragStarted(event: any, d: any) {
 function dragged(event: any, d: any) {
   d.fx = event.x
   d.fy = event.y
+  // Reheat simulation to make other nodes respond to the dragged node
+  if (simulation.alpha() < 0.3) {
+    simulation.alpha(0.3).restart()
+  }
 }
 
 function dragEnded(event: any, d: any) {
@@ -366,34 +365,55 @@ watch([() => props.nodes, () => props.links], async () => {
   render()
 }, { deep: true })
 
-watch(() => props.centerNodeId, () => {
-  render()
+watch(() => props.centerNodeId, (newId, oldId) => {
+  if (newId !== oldId) {
+    render()
+    setTimeout(() => centerOnNode(newId), 100)
+  }
 })
 
 const zoomToNode = (nodeId: string) => {
+  centerOnNode(nodeId)
+}
+
+const centerOnNode = (nodeId: string) => {
   if (!nodeId || !svgRef.value || !zoomBehavior) return
   const node = localNodes.find((n: any) => n.id === nodeId)
-  if (!node) return
+  if (!node) {
+    console.log('[ForceGraph] centerOnNode: node not found', nodeId, 'available nodes:', localNodes.map(n => n.id))
+    return
+  }
 
-  const width = window.innerWidth
-  const height = window.innerHeight
+  // Use props width/height (which account for header) instead of window dimensions
+  const width = props.width || window.innerWidth
+  const height = props.height || window.innerHeight
+  const scale = 1.5
 
-  d3.select(svgRef.value).transition().duration(500).call(
+  console.log('[ForceGraph] centering on node:', nodeId, 'at', node.x, node.y, 'viewport:', width, height)
+
+  // Transform formula: screenPos = scale * nodePos + translate
+  // For node to be at screen center: translate = screenCenter - scale * nodePos
+  const tx = width / 2 - scale * node.x
+  const ty = height / 2 - scale * node.y
+
+  d3.select(svgRef.value).transition().duration(800).call(
     zoomBehavior.transform,
-    d3.zoomIdentity.translate(width / 2 - node.x, height / 2 - node.y).scale(1.5)
+    d3.zoomIdentity.translate(tx, ty).scale(scale)
   )
 }
 
 const handleResize = () => {
+  // Reinitialize with current props dimensions (accounting for header)
   initStarfield()
   initSimulation()
   render()
 }
 
 const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible' && simulation) {
-    simulation.alpha(0.3).restart()
-  }
+  // Don't restart simulation on visibility change - it disrupts the zoom state
+  // if (document.visibilityState === 'visible' && simulation) {
+  //   simulation.alpha(0.3).restart()
+  // }
 }
 
 onMounted(async () => {
@@ -401,6 +421,11 @@ onMounted(async () => {
   initStarfield()
   initSimulation()
   render()
+
+  // Wait for simulation to stabilize then center
+  setTimeout(() => {
+    centerOnNode(props.centerNodeId)
+  }, 500)
 
   window.addEventListener('resize', handleResize)
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -413,7 +438,7 @@ onUnmounted(() => {
   if (simulation) simulation.stop()
 })
 
-defineExpose({ zoomToNode })
+defineExpose({ zoomToNode, centerOnNode, clearZoomTransform: () => { currentZoomTransform = null } })
 </script>
 
 <style scoped>
