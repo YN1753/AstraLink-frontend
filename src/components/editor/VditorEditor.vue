@@ -226,7 +226,10 @@ defineExpose({
   getValue: () => vditorInstance?.getValue() || '',
   setValue: (value: string) => vditorInstance?.setValue(value),
   insertValue: (value: string) => vditorInstance?.insertValue(value),
-  focus: () => vditorInstance?.focus(),
+  focus: () => {
+    console.log('[VditorEditor] focus() called')
+    vditorInstance?.focus()
+  },
   blur: () => vditorInstance?.blur(),
   undo: () => (vditorInstance as any)?.undo?.(),
   redo: () => (vditorInstance as any)?.redo?.(),

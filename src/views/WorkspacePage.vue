@@ -323,7 +323,6 @@
                 @input="clearSearchResults"
                 @keyup.esc="showSearch = false"
                 @keyup.enter="performSearch"
-                autofocus
               />
               <Icon name="Search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <button
@@ -1320,6 +1319,28 @@ onMounted(async () => {
   window.addEventListener('resize', updateGraphDimensions)
   window.addEventListener('scroll', closeContextMenu, { passive: true })
   window.addEventListener('click', handleGlobalClick)
+
+  // Debug: track window focus/blur
+  window.addEventListener('blur', () => {
+    console.log('[Window] blur event - window lost focus')
+    // Prevent any element from stealing focus when window is not active
+    setTimeout(() => {
+      if (document.activeElement && document.activeElement !== document.body) {
+        console.log('[Window] blur - activeElement is:', document.activeElement.tagName, document.activeElement.className)
+        // If there's an active element that might steal focus, blur it
+        if (document.activeElement.tagName === 'TEXTAREA' ||
+            document.activeElement.tagName === 'INPUT' ||
+            (document.activeElement as HTMLElement).isContentEditable) {
+          console.log('[Window] blur - blurring active element to prevent focus restore')
+          ;(document.activeElement as HTMLElement).blur()
+        }
+      }
+    }, 10)
+  })
+  window.addEventListener('focus', () => {
+    console.log('[Window] focus event - window gained focus')
+  })
+
   updateGraphDimensions()
 
   // Debug: log sessionStorage values

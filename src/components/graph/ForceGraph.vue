@@ -410,10 +410,19 @@ const handleResize = () => {
 }
 
 const handleVisibilityChange = () => {
-  // Don't restart simulation on visibility change - it disrupts the zoom state
-  // if (document.visibilityState === 'visible' && simulation) {
-  //   simulation.alpha(0.3).restart()
-  // }
+  // Pause/resume canvas animation based on visibility
+  if (document.visibilityState === 'hidden') {
+    // Page is hidden (minimized or tab not visible) - pause animation
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+    }
+  } else {
+    // Page is visible again - resume animation
+    if (!animationFrameId) {
+      initStarfield()
+    }
+  }
 }
 
 onMounted(async () => {
@@ -428,7 +437,7 @@ onMounted(async () => {
   }, 500)
 
   window.addEventListener('resize', handleResize)
-  document.addEventListener('visibilitychange', handleVisibilityChange)
+   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
