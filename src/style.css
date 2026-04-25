@@ -1,0 +1,272 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-deep-space: #0B0E14;
+    --color-neon-cyan: #00E5FF;
+    --color-neon-blue: #0077FF;
+    --color-neon-purple: #B026FF;
+  }
+
+  html {
+    @apply bg-deep-space;
+  }
+
+  body {
+    @apply antialiased text-gray-300;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-deep-space-100 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-deep-space-50 rounded-full hover:bg-deep-space-200 transition-colors;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-deep-space/60 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl;
+  }
+
+  .glass-card {
+    @apply bg-deep-space/50 backdrop-blur-lg border border-white/5 rounded-lg shadow-lg;
+  }
+
+  .neon-border {
+    @apply border border-neon-cyan/30 shadow-[0_0_20px_rgba(0,229,255,0.1)];
+  }
+
+  .neon-text {
+    @apply text-neon-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.5)];
+  }
+
+  .orbit-ring {
+    @apply border-dashed border-white/10;
+  }
+
+  .center-anchor {
+    @apply absolute w-2 h-2 bg-neon-cyan rounded-full shadow-[0_0_15px_5px_rgba(0,229,255,0.3)] animate-pulse-glow;
+  }
+
+  .galaxy-node {
+    @apply w-10 h-10 border-2 border-double border-neon-blue/40 rounded-full bg-deep-space/80
+           backdrop-blur-sm shadow-[inset_0_0_10px_rgba(0,119,255,0.2)] cursor-pointer
+           hover:scale-110 hover:shadow-[0_0_20px_rgba(0,119,255,0.3)] transition-all duration-300;
+  }
+
+  .note-node {
+    @apply w-8 h-8 border border-neon-cyan/50 rounded-full bg-deep-space/70
+           backdrop-blur-sm shadow-[inset_0_0_8px_rgba(0,229,255,0.1)] cursor-pointer
+           hover:scale-110 hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-all duration-300;
+  }
+
+  /* 增强节点样式 */
+  .galaxy-node-enhanced {
+    @apply galaxy-node;
+    filter: drop-shadow(0 0 8px rgba(0,119,255,0.5))
+           drop-shadow(0 0 4px rgba(0,229,255,0.3));
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .note-node-enhanced {
+    @apply note-node;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,0.4))
+           drop-shadow(0 0 3px rgba(255,255,255,0.2));
+    animation: float 3s ease-in-out infinite alternate;
+  }
+
+  /* 粒子光环效果 */
+  .node-halo {
+    @apply absolute inset-0 rounded-full pointer-events-none;
+    background: radial-gradient(circle,
+      rgba(0,229,255,0.3) 0%,
+      rgba(0,119,255,0.2) 30%,
+      transparent 70%
+    );
+    animation: pulse-halo 3s ease-in-out infinite;
+  }
+
+  /* 拖尾效果 */
+  .node-trail {
+    @apply absolute inset-0 rounded-full pointer-events-none;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0%,
+      rgba(0,119,255,0.4) 15%,
+      rgba(0,229,255,0.6) 30%,
+      transparent 45%,
+      transparent 100%
+    );
+    animation: spin-trail 2s linear infinite;
+  }
+
+  /* 选中状态 */
+  .node-selected {
+    @apply border-2 border-neon-cyan shadow-[0_0_25px_rgba(0,229,255,0.4)];
+    animation: glow-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* 连接线流动效果 */
+  .connection-flow {
+    stroke-dasharray: 5;
+    animation: dash-flow 1s linear infinite;
+    stroke-linecap: round;
+  }
+
+  /* 节点标签样式 */
+  .node-label {
+    @apply absolute -top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs bg-deep-space/80 backdrop-blur-sm px-2 py-1 rounded border border-white/10;
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* Enhanced glassmorphism effects */
+  .glass-panel-enhanced {
+    background: rgba(11, 14, 20, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Glow button styling */
+  .glow-button {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 119, 255, 0.05));
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    box-shadow:
+      0 0 20px rgba(0, 229, 255, 0.1),
+      inset 0 0 20px rgba(0, 229, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .glow-button:hover {
+    box-shadow:
+      0 0 30px rgba(0, 229, 255, 0.2),
+      inset 0 0 20px rgba(0, 229, 255, 0.1);
+    border-color: rgba(0, 229, 255, 0.5);
+  }
+}
+
+@layer utilities {
+  /* 新增动画定义 */
+  @keyframes pulse-halo {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.2);
+    }
+  }
+
+  @keyframes spin-trail {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-5px) scale(1.05);
+    }
+  }
+
+  @keyframes dash-flow {
+    to {
+      stroke-dashoffset: -10;
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(0,229,255,0.3),
+                  inset 0 0 5px rgba(0,229,255,0.1);
+    }
+    50% {
+      box-shadow: 0 0 15px rgba(0,229,255,0.5),
+                  inset 0 0 10px rgba(0,229,255,0.2);
+    }
+  }
+
+  @keyframes orbit-drift {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes node-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes orbit-spin {
+    from {
+      transform: rotate(0deg) translateX(50%) rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg) translateX(50%) rotate(-360deg);
+    }
+  }
+
+  @keyframes login-explosion {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes starfield {
+    0% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+  }
+}
