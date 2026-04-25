@@ -31,9 +31,6 @@
 
         <!-- 登录表单 -->
         <form @submit.prevent="handleLogin">
-          <div class="mb-4 text-sm text-gray-400">
-            提示：用户名 test，密码 test123
-          </div>
           <div class="space-y-4">
             <!-- 用户名 -->
             <div class="space-y-2">

@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.git
+.idea
+node_modules
+dist
+.env.development
+.env.local
