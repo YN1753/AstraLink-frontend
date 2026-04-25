@@ -62,14 +62,30 @@ export interface User {
 class NodeApi {
   // Create a star (note) - optionally in a galaxy
   async createStar(galaxyId?: string): Promise<ApiResponse<Star>> {
-    const response = await api.post<ApiResponse<Star>>('/api/star/create', galaxyId ? { galaxy_id: galaxyId } : {})
-    return response.data
+    console.log('[NodeApi.createStar] Calling with galaxyId:', galaxyId)
+    try {
+      const response = await api.post<ApiResponse<Star>>('/api/star/create', galaxyId ? { galaxy_id: galaxyId } : {})
+      console.log('[NodeApi.createStar] Response:', response)
+      return response.data
+    } catch (error: any) {
+      console.error('[NodeApi.createStar] Error:', error)
+      console.error('[NodeApi.createStar] Error response:', error.response)
+      throw error
+    }
   }
 
   // Create a galaxy
   async createGalaxy(parentId?: { parent_id?: string }): Promise<ApiResponse<Galaxy>> {
-    const response = await api.post<ApiResponse<Galaxy>>('/api/galaxy/create', parentId || {})
-    return response.data
+    console.log('[NodeApi.createGalaxy] Calling with parentId:', parentId)
+    try {
+      const response = await api.post<ApiResponse<Galaxy>>('/api/galaxy/create', parentId || {})
+      console.log('[NodeApi.createGalaxy] Response:', response)
+      return response.data
+    } catch (error: any) {
+      console.error('[NodeApi.createGalaxy] Error:', error)
+      console.error('[NodeApi.createGalaxy] Error response:', error.response)
+      throw error
+    }
   }
 
   // Get star content

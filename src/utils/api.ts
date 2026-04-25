@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 
 import { useNotificationStore } from '../stores/notification'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+console.log('[API] Initialized with base URL:', API_BASE_URL)
 
 export interface ApiResponse<T = any> {
   code: number
@@ -21,6 +22,7 @@ const api: AxiosInstance = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    console.log('[API Request]', config.method?.toUpperCase(), config.url, 'data:', config.data)
     const token = localStorage.getItem('token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
@@ -28,6 +30,7 @@ api.interceptors.request.use(
     return config
   },
   (error) => {
+    console.error('[API Request Error]', error)
     return Promise.reject(error)
   }
 )
@@ -35,6 +38,7 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    console.log('[API Response]', response.config.url, 'status:', response.status, 'data:', JSON.stringify(response.data))
     // 统一处理成功响应
     if (response.data && response.data.code !== 200) {
       const notificationStore = useNotificationStore()
@@ -48,6 +52,7 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    console.error('[API Error]', error.config?.url, 'status:', error.response?.status, 'data:', error.response?.data)
     const notificationStore = useNotificationStore()
 
     if (error.response) {

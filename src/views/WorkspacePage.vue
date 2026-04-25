@@ -267,18 +267,18 @@
     </main>
 
     <!-- 创建新节点菜单 -->
-    <div v-if="showCreateMenu" class="fixed bottom-20 right-6 glass-panel p-2">
+    <div v-if="showCreateMenu" class="create-menu-container fixed bottom-20 right-6 glass-panel p-2 z-50">
       <div class="space-y-2">
         <button
           @click="createNode('star')"
-          class="flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors text-gray-300 hover:text-white"
+          class="flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors text-gray-300 hover:text-white w-full"
         >
           <Icon name="FileText" class="h-4 w-4 text-neon-cyan" />
           <span>创建笔记</span>
         </button>
         <button
           @click="createNode('galaxy')"
-          class="flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors text-gray-300 hover:text-white"
+          class="flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors text-gray-300 hover:text-white w-full"
         >
           <Icon name="FolderOpen" class="h-4 w-4 text-neon-blue" />
           <span>创建星系</span>
@@ -288,10 +288,10 @@
 
     <!-- 创建新节点按钮 -->
     <button
-      @click="toggleCreateMenu"
-      class="fixed bottom-6 right-6 z-10 glass-card w-12 h-12 rounded-full flex items-center justify-center text-neon-cyan hover:scale-110 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all duration-300 animate-pulse-glow"
+      @click.stop="testClick"
+      class="create-menu-button fixed bottom-6 right-6 z-[60] glass-card w-12 h-12 rounded-full flex items-center justify-center text-neon-cyan hover:scale-110 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all duration-300 animate-pulse-glow"
     >
-      <Icon :name="showCreateMenu ? 'X' : 'Plus'" class="h-6 w-6" />
+      <span class="text-xl">+</span>
     </button>
 
     <!-- 用户资料卡片 -->
@@ -747,6 +747,13 @@ const handleGlobalClick = (event: MouseEvent) => {
       showUserMenu.value = false
     }
   }
+
+  // Close create menu when clicking outside
+  if (showCreateMenu.value) {
+    if (!target.closest('.create-menu-container')) {
+      showCreateMenu.value = false
+    }
+  }
 }
 
 // Open tag selector from context menu and select the node first
@@ -839,8 +846,16 @@ const toggleCreateMenu = () => {
   showCreateMenu.value = !showCreateMenu.value
 }
 
+const testClick = () => {
+  console.log('[TEST] Button clicked! showCreateMenu:', showCreateMenu.value)
+  toggleCreateMenu()
+}
+
 const createNode = async (type: 'star' | 'galaxy') => {
   showCreateMenu.value = false
+  console.log('[createNode] Starting - type:', type)
+  console.log('[createNode] centerNodeId:', centerNodeId.value)
+  console.log('[createNode] userStore.user?.id:', userStore.user?.id)
 
   try {
     let response: any
@@ -848,15 +863,23 @@ const createNode = async (type: 'star' | 'galaxy') => {
     if (type === 'star') {
       // If we're inside a galaxy (centerNodeId is a galaxy and not the user), create star in that galaxy
       const currentCenter = nodes.value.find(n => n.id === centerNodeId.value)
+      console.log('[createNode] currentCenter:', currentCenter)
       const galaxyId = (currentCenter?.type === 'galaxy') ? centerNodeId.value : undefined
+      console.log('[createNode] Calling createStar with galaxyId:', galaxyId)
       response = await nodeApi.createStar(galaxyId)
+      console.log('[createNode] createStar response:', response)
     } else {
       // Create new galaxy - parent is current center if not at root level (user node)
       const parentId = centerNodeId.value === userStore.user?.id ? undefined : centerNodeId.value
+      console.log('[createNode] Calling createGalaxy with parentId:', parentId)
       response = await nodeApi.createGalaxy(parentId ? { parent_id: parentId } : {})
+      console.log('[createNode] createGalaxy response:', response)
     }
 
-    if (response.data) {
+    console.log('[createNode] response.data:', response?.data)
+
+    if (response?.data) {
+      console.log('[createNode] Creating notification')
       notificationStore.addNotification({
         type: 'success',
         title: '创建成功',
@@ -871,9 +894,12 @@ const createNode = async (type: 'star' | 'galaxy') => {
       console.log('[createNode] Reloading graph - isInsideGalaxy:', isInsideGalaxy, 'centerNodeId:', centerNodeId.value, 'currentPath length:', currentPath.value.length)
 
       await loadGraphData(targetCenterId)
+    } else {
+      console.log('[createNode] No data in response, skipping reload')
     }
   } catch (error: any) {
-    console.error('Failed to create node:', error)
+    console.error('[createNode] Error:', error)
+    console.error('[createNode] Error response:', error.response)
     // Don't show error if it's a CORS preflight (204)
     if (!error.response?.status || error.response?.status !== 204) {
       notificationStore.addNotification({
